@@ -1,0 +1,87 @@
+import org.openqa.selenium.By;
+import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.WebElement;
+import org.openqa.selenium.chrome.ChromeDriver;
+import org.openqa.selenium.support.ui.ExpectedConditions;
+import org.openqa.selenium.support.ui.WebDriverWait;
+import java.io.FileWriter;
+import java.io.IOException;
+
+public class TendableTest {
+    public static void main(String[] args) {
+        // Set up WebDriver
+        System.setProperty("webdriver.chrome.driver", "path/to/chromedriver");
+        WebDriver driver = new ChromeDriver();
+        WebDriverWait wait = new WebDriverWait(driver, 10);
+
+        try {
+            // Step 1: Confirm accessibility of top-level menus
+            driver.get("https://www.tendable.com");
+            
+            // Menu items
+            String[] menuIds = {"home-menu", "our-story-menu", "our-solution-menu", "why-tendable-menu"};
+            for (String menuId : menuIds) {
+                WebElement menu = driver.findElement(By.id(menuId));
+                if (menu.isDisplayed()) {
+                    System.out.println(menuId + " is accessible.");
+                } else {
+                    System.out.println(menuId + " is NOT accessible.");
+                }
+            }
+
+            // Step 2: Verify "Request a Demo" button on each top-level menu page
+            for (String menuId : menuIds) {
+                driver.findElement(By.id(menuId)).click();
+                wait.until(ExpectedConditions.urlContains(menuId));  // Ensure the page loads
+
+                WebElement demoButton = driver.findElement(By.id("request-demo"));
+                if (demoButton.isDisplayed() && demoButton.isEnabled()) {
+                    System.out.println("Request a Demo button is present and active on " + menuId + " page.");
+                } else {
+                    System.out.println("Request a Demo button is NOT present or active on " + menuId + " page.");
+                }
+            }
+
+            // Step 3: Contact Us form
+            driver.findElement(By.linkText("Contact Us")).click();
+            wait.until(ExpectedConditions.visibilityOfElementLocated(By.id("contact-form")));
+
+            WebElement marketingOption = driver.findElement(By.id("contact-reason-marketing"));
+            marketingOption.click();
+
+            WebElement submitButton = driver.findElement(By.id("submit-button"));
+            submitButton.click();
+
+            WebElement errorMessage = driver.findElement(By.id("error-message"));
+            if (errorMessage.isDisplayed()) {
+                System.out.println("Error message displayed. Test PASSED.");
+            } else {
+                System.out.println("Error message NOT displayed. Test FAILED.");
+                // Step 4: Create bug report
+                createBugReport("No error message displayed when the Message field is empty.");
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+            // Clean up
+            driver.quit();
+        }
+    }
+
+    private static void createBugReport(String bugDescription) {
+        try (FileWriter writer = new FileWriter("BugReport.docx")) {
+            writer.write("Bug Report\n");
+            writer.write("Description: " + bugDescription + "\n");
+            writer.write("Steps to Reproduce:\n");
+            writer.write("1. Navigate to Contact Us section.\n");
+            writer.write("2. Choose 'Marketing' as the reason.\n");
+            writer.write("3. Submit the form without filling out the Message field.\n");
+            writer.write("4. Observe if an error message is displayed.\n");
+            writer.write("Expected Result: An error message should be displayed.\n");
+            writer.write("Actual Result: [Describe what happened]\n");
+            writer.write("Status: [Pass/Fail]");
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+}
